@@ -15,8 +15,9 @@ profile <- filter(neuroblastoma$profiles,
 #                                     changepoint
 
 # Calculate changepoints using changepoint library.
-cpt_profile <- cpt.mean(profile$logratio, method = "PELT", 
-                        penalty="Manual", pen.value="log(n)/2")
+cpt_profile <- cpt.mean(profile$logratio,
+                        penalty="Manual", 
+                        pen.value="log(n)")
 
 plot(cpt_profile, 
      type = "p", pch=20, col="black", # Data point params.
@@ -29,7 +30,6 @@ plot(cpt_profile,
 
 # Calculate changepoints using fpop library.
 fpop_profile <- Fpop(profile$logratio, lambda=1)
-print(fpop_profile)
 
 # Get the starts and ends of each changepoint interval.
 fpop_end <- fpop_profile$t.est
