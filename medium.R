@@ -1,0 +1,71 @@
+# _______________________________________________
+# Author: Garrett Tetrault
+# Date: 2/28/2019
+# _______________________________________________
+library(dplyr)
+library(magrittr)
+library(ggplot2)
+library(reshape2)
+library(changepoint)
+library(fpop)
+data(neuroblastoma, package = "neuroblastoma")
+
+# _______________________________________________
+# Put cpt changepoint intervals in plottable format.
+cpt_segments <- function(data, penalty) {
+  
+  # Calculate changepoints using changepoint library.
+  cpt <- cpt.mean(data, penalty=penalty,
+                  method="PELT", pen.value=0.5)
+  
+  # Get the starts and ends of each changepoint interval.
+  end <- cpt@cpts
+  start <- c(1, end[1:length(end)-1])
+  
+  # Get mean over each changepoint interval.
+  seg_mean <- vector(length=length(end))
+  for(i in 1:length(start)) {
+    seg_mean[i] <- mean(data[start[i]:end[i]])
+  }
+  
+  # We use NA to avoid jumps in plot.
+  seg <- c(rep(seg_mean, times=(end-start)), NA)
+  seg[start] <- NA
+  
+  return(seg)
+}
+
+# _______________________________________________
+# Desired id and chromosome to examine.
+id <- c("2", "4")
+chr <- c("1", "2")
+
+# Filter data for only specified id and chromosome.
+prof1 <- filter(neuroblastoma$profiles, 
+                profile.id == id[1], 
+                chromosome == chr[1])
+
+prof2 <- filter(neuroblastoma$profiles, 
+                profile.id == id[2], 
+                chromosome == chr[2])
+
+profile <- rbind(as.data.frame(prof1), 
+                 as.data.frame(prof2))
+
+# Different penalty parameters to try.
+penalties <- c("AIC", "MBIC", "Manual")
+
+# Get plottable changepoint interval for each 
+# profile and add to profile data frame.
+for(penalty in penalties) {
+  profile[penalty] <-
+    c(cpt_segments(prof1$logratio, penalty),
+      cpt_segments(prof2$logratio, penalty))
+}
+
+molten_profile <- melt(profile, measure.vars = penalties)
+
+ggplot(data=molten_profile) +
+  geom_point(mapping=aes(x=position, y=logratio)) +
+  geom_line(mapping=aes(x=position, y=value), col="green") +
+  facet_grid(variable ~ profile.id + chromosome)

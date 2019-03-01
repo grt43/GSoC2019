@@ -1,3 +1,7 @@
+# _______________________________________________
+# Author: Garrett Tetrault
+# Date: 2/28/2019
+# _______________________________________________
 library(dplyr)
 library(changepoint)
 library(fpop)
@@ -5,11 +9,12 @@ data(neuroblastoma, package = "neuroblastoma")
 
 # Desired id and chromosome to examine.
 id <- "4"
-chromo <- "2"
+chr <- "2"
 
 # Filter data for only specified id and chromosome.
 profile <- filter(neuroblastoma$profiles, 
-                  profile.id == id, chromosome == chromo)
+                  profile.id == id, 
+                  chromosome == chr)
 
 # _______________________________________________
 #                                     changepoint
@@ -32,22 +37,20 @@ plot(cpt_profile,
 fpop_profile <- Fpop(profile$logratio, lambda=1)
 
 # Get the starts and ends of each changepoint interval.
-fpop_end <- fpop_profile$t.est
-fpop_start <- c(1, fpop_end[1:length(fpop_end)-1])
+seg_end <- fpop_profile$t.est
+seg_start <- c(1, seg_end[1:length(seg_end)-1])
 
-# Create plottable data of the changepoint intervals.
-fpop_segs <- vector(length=length(profile$position))
-for(i in 1:length(fpop_start)) {
-  start <- fpop_start[i]
-  end <- fpop_end[i]
-  
-  # Set segement value to mean over the changepoint interval.
-  seg_mean <- mean(profile$logratio[start:end])
-  seg_length <- length(fpop_segs[start:end])
-  
-  fpop_segs[start:end] <- rep.int(seg_mean, times=seg_length)
-  fpop_segs[start] <- NA # We use NA to avoid jumps in plot.
+# Get mean over each changepoint interval.
+seg_mean <- vector(length=length(seg_start))
+for(i in 1:length(seg_start)) {
+  seg_mean[i] <- 
+    profile$logratio[seg_start[i]:seg_end[i]] %>%
+    mean()
 }
+
+# We use NA to avoid jumps in plot.
+fpop_segs <- c(rep(seg_mean, times=(seg_end-seg_start)), NA)
+fpop_segs[seg_start] <- NA
 
 # Plot data and changepoint segments.
 plot(profile$position, profile$logratio,
