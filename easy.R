@@ -21,6 +21,7 @@ profile <- filter(neuroblastoma$profiles,
 
 # Calculate changepoints using changepoint library.
 cpt_profile <- cpt.mean(profile$logratio,
+                        method="PELT",
                         penalty="Manual", 
                         pen.value="log(n)")
 

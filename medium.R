@@ -3,11 +3,9 @@
 # Date: 2/28/2019
 # _______________________________________________
 library(dplyr)
-library(magrittr)
 library(ggplot2)
 library(reshape2)
 library(changepoint)
-library(fpop)
 data(neuroblastoma, package = "neuroblastoma")
 
 # _______________________________________________
@@ -63,9 +61,11 @@ for(penalty in penalties) {
       cpt_segments(prof2$logratio, penalty))
 }
 
-molten_profile <- melt(profile, measure.vars = penalties)
+molten_profile <- melt(profile, 
+                       measure.vars=penalties, 
+                       value.name="cpts", variable.name="penalty")
 
 ggplot(data=molten_profile) +
   geom_point(mapping=aes(x=position, y=logratio)) +
-  geom_line(mapping=aes(x=position, y=value), col="green") +
-  facet_grid(variable ~ profile.id + chromosome)
+  geom_line(mapping=aes(x=position, y=cpts), col="green") +
+  facet_grid(penalty ~ profile.id + chromosome)
